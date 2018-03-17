@@ -5,7 +5,7 @@
   <description>Ultrasonic sensor reading publisher</description>
   
   <maintainer email="pizo@piz.biz">David Alvarez</maintainer>
-  <license>MIT</license>
+  <license>GPL</license>
 
   <build_depend>message_generation</build_depend>
   <build_depend>roscpp</build_depend>
