@@ -3,9 +3,21 @@ project(see_ultrasonic)
 
 add_compile_options(-std=c++14)
 
-find_package(catkin REQUIRED)
+find_package(catkin REQUIRED 
+             COMPONENTS
+             message_generation
+             roscpp
+             std_msgs
+)
 
-catkin_package()
+add_message_files(
+  FILES
+  UltrasonicEvent.msg
+)
+
+generate_messages()
+
+catkin_package(CATKIN_DEPENDS message_runtime)
 
 include_directories(${catkin_INCLUDE_DIRS})
 

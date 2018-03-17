@@ -1,32 +1,54 @@
-#include <chrono>
-#include <iostream>
-#include <string>
-#include <thread>
-
-//#include <ros/ros.h>
+#include <ros/ros.h>
 
 #include <wiringPi.h>
 
+#include "see_ultrasonic/UltrasonicEvent.h"
+
 #include "UltrasonicSensor.hpp"
 
-constexpr double MAX_DISTANCE = 400.0;
+// TODO: Move this to configuration arguments
+namespace {
+constexpr uint8_t PUBLISH_FREQUENCY = 10;
+
+constexpr uint8_t SENSOR_CENTER_TRG_PIN = 0;
+constexpr uint8_t SENSOR_CENTER_ECH_PIN = 2;
+constexpr uint8_t SENSOR_RIGHT_TRG_PIN = 1;
+constexpr uint8_t SENSOR_RIGHT_ECH_PIN = 4;
+constexpr uint8_t SENSOR_LEFT_TRG_PIN = 21;
+constexpr uint8_t SENSOR_LEFT_ECH_PIN = 22;
+
+const std::string SENSOR_TOPIC{"/sensors/ultrasonic"};
+constexpr uint8_t SENSOR_MAX_QUEUE{10};
+} // namespace
 
 int main(int argc, char** argv)
 {
+  ros::init(argc, argv, "see_ultrasonic");
   wiringPiSetup();
 
-  mapper::see::UltrasonicSensor sensor1{0, 2};
-  mapper::see::UltrasonicSensor sensor2{1, 4};
-  mapper::see::UltrasonicSensor sensor3{21, 22};
+  mapper::see::UltrasonicSensor sensorCenter{SENSOR_CENTER_TRG_PIN, SENSOR_CENTER_ECH_PIN};
+  mapper::see::UltrasonicSensor sensorRight{SENSOR_RIGHT_TRG_PIN, SENSOR_RIGHT_ECH_PIN};
+  mapper::see::UltrasonicSensor sensorLeft{SENSOR_LEFT_TRG_PIN, SENSOR_LEFT_ECH_PIN};
 
-  while(true)
+  ros::NodeHandle node;
+
+  ros::Publisher sensorPublisher =
+      node.advertise<see_ultrasonic::UltrasonicEvent>(SENSOR_TOPIC, SENSOR_MAX_QUEUE);
+
+  ros::Rate loop_rate(PUBLISH_FREQUENCY);
+
+  while(ros::ok())
   {
-    auto out1 = sensor1.read();
-    auto out2 = sensor2.read();
-    auto out3 = sensor3.read();
+    see_ultrasonic::UltrasonicEvent event;
 
-    std::cout << "Measures: 1: " << out1 << ", 2: " << out2 << ", 3: " << out3 << std::endl;
+    event.center = sensorCenter.read();
+    event.right = sensorRight.read();
+    event.left = sensorLeft.read();
 
-    std::this_thread::sleep_for(std::chrono::seconds(1));
+    sensorPublisher.publish(event);
+
+    ros::spinOnce();
+
+    loop_rate.sleep();
   }
 }
